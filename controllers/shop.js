@@ -1,6 +1,6 @@
-const product = require("../models/product");
 const Product = require("../models/product");
 const Cart = require("../models/user");
+const Order = require('../models/order')
 
 exports.getProducts = (req, res, next) => {
   Product.find()
@@ -49,7 +49,6 @@ exports.getCart = async (req, res, next) => {
   await req.user
     .populate("cart.items.productId")
     .then((user) => {
-      console.log(user.cart.items);
       const products = user.cart.items;
       res.render("shop/cart", {
         path: "/cart",
@@ -81,11 +80,32 @@ exports.postCartDeleteProduct = (req, res, next) => {
     });
 };
 
-exports.postOrder = (req, res, next) => {
-  req.user.addOrder
-    .then(() => res.redirect("/orders"))
-    .catch((err) => console.log(err));
+
+exports.postOrder = async (req, res) => {
+  try {
+    await req.user.populate("cart.items.productId");
+    console.log(req.user.cart.items);
+    const products = req.user.cart.items.map(i => {
+      return { quantity: i.quantity, product: { ...i.productId._doc } };
+    });
+
+    const order = new Order({
+      user: {
+        name: req.user.name,
+        userId: req.user,
+      },
+      products: products,
+    });
+    await order.save();
+
+    res.redirect("/orders");
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Something went wrong!');
+  }
 };
+
 
 exports.getOrders = (req, res, next) => {
   res.render("shop/orders", {
