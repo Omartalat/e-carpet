@@ -1,6 +1,6 @@
 const Product = require("../models/product");
 const Cart = require("../models/user");
-const Order = require('../models/order')
+const Order = require("../models/order");
 
 exports.getProducts = (req, res, next) => {
   Product.find()
@@ -10,9 +10,6 @@ exports.getProducts = (req, res, next) => {
         pageTitle: "All Products",
         path: "/products",
       });
-    })
-    .catch((err) => {
-      console.log(err);
     })
     .catch((err) => {
       console.log(err);
@@ -80,12 +77,10 @@ exports.postCartDeleteProduct = (req, res, next) => {
     });
 };
 
-
 exports.postOrder = async (req, res) => {
   try {
     await req.user.populate("cart.items.productId");
-    console.log(req.user.cart.items);
-    const products = req.user.cart.items.map(i => {
+    const products = req.user.cart.items.map((i) => {
       return { quantity: i.quantity, product: { ...i.productId._doc } };
     });
 
@@ -97,21 +92,36 @@ exports.postOrder = async (req, res) => {
       products: products,
     });
     await order.save();
-
+    await req.user.clearCart();
     res.redirect("/orders");
-
   } catch (err) {
     console.log(err);
-    res.status(500).send('Something went wrong!');
+    res.status(500).send("Something went wrong!");
   }
 };
 
-
-exports.getOrders = (req, res, next) => {
-  res.render("shop/orders", {
-    path: "/orders",
-    pageTitle: "Your Orders",
-  });
+exports.getOrders = async (req, res, next) => {
+  try {
+    const orders = await Order.find({ "user.userId": req.user._id });
+    res.render("shop/orders", {
+      path: "/orders",
+      pageTitle: "Your Orders",
+      orders: orders,
+    });
+  } catch (err) {
+    console.log("Error fetching orders:", err);
+  }
+  // Order.find({"user.userId": req.user._id})
+  //   .then((orders) => {
+  //     res.render("shop/orders", {
+  //       path: "/orders",
+  //       pageTitle: "Your Orders",
+  //       orders: orders,
+  //     });
+  //   })
+  //   .catch((err) => {
+  //     console.log(err);
+  //   });
 };
 
 exports.getCheckout = (req, res, next) => {
