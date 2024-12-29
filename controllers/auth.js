@@ -73,20 +73,26 @@ exports.postLogin = async (req, res, next) => {
 exports.postSignup = async (req, res, next) => {
   const { email, password, confirmPassword } = req.body;
   // Validate that passwords match
-  if (password !== confirmPassword) {
-    return res
-      .status(400)
-      .render("signup", { errorMessage: "Passwords do not match!" });
-  }
   try {
     // Check if the user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res
-        .status(400)
-        .render("signup", { errorMessage: "Email already in use!" });
+      return res.status(400).render("auth/signup", {
+        path: "/signup",
+        pageTitle: "Signup",
+        isAuthenticated: false,
+        errorMessage: "Email already in use!",
+      });
     }
-
+    
+    if (password !== confirmPassword) {
+      return res.status(400).render("auth/signup", {
+        path: "/signup",
+        pageTitle: "Signup",
+        isAuthenticated: false,
+        errorMessage: "Passwords do not match!",
+      });
+    }
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -101,7 +107,10 @@ exports.postSignup = async (req, res, next) => {
     res.status(201).redirect("/login");
   } catch (err) {
     console.error(err);
-    res.status(500).render("signup", {
+    res.status(500).render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Signup",
+      isAuthenticated: false,
       errorMessage: "An error occurred. Please try again later.",
     });
   }
