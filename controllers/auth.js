@@ -84,7 +84,7 @@ exports.postSignup = async (req, res, next) => {
         errorMessage: "Email already in use!",
       });
     }
-    
+
     if (password !== confirmPassword) {
       return res.status(400).render("auth/signup", {
         path: "/signup",
@@ -120,5 +120,13 @@ exports.postLogout = (req, res, next) => {
   req.session.destroy((err) => {
     console.log(err);
     res.redirect("/");
+  });
+};
+
+exports.getReset = (req, res, next) => {
+  res.render("auth/reset", {
+    path: "/reset",
+    pageTitle: "Reset Password",
+    errorMessage: req.errorMessage,
   });
 };
