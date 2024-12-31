@@ -1,11 +1,26 @@
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
+require("dotenv").config();
+// Import the Nodemailer library
+const nodemailer = require('nodemailer');
+
+// Create a transporter object
+const transporter = nodemailer.createTransport({
+  host: 'live.smtp.mailtrap.io',
+  port: 587,
+  secure: false, // use SSL
+  auth: {
+    user: process.env.EMAIL_API_USER,
+    pass: process.env.EMAIL_API_PASS,
+  }
+});
 
 exports.getLogin = (req, res, next) => {
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
     isAuthenticated: false,
+    errorMessage: req.errorMessage,
   });
 };
 
@@ -14,6 +29,7 @@ exports.getSignup = (req, res, next) => {
     path: "/signup",
     pageTitle: "Signup",
     isAuthenticated: false,
+    errorMessage: req.errorMessage,
   });
 };
 
@@ -103,6 +119,22 @@ exports.postSignup = async (req, res, next) => {
     });
     await newUser.save();
 
+    const mailOptions = {
+      from: 'demo@demomailtrap.com',
+      to: 'dr.omartalat@gmail.com',
+      subject: 'Sending Email using Node.js',
+      text: 'That was easy!'
+    };
+    
+    // Send the email
+    transporter.sendMail(mailOptions, function(error, info){
+      if (error) {
+        console.log(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+      }
+    });
+
     // Redirect to the login page on successful signup
     res.status(201).redirect("/login");
   } catch (err) {
@@ -127,6 +159,7 @@ exports.getReset = (req, res, next) => {
   res.render("auth/reset", {
     path: "/reset",
     pageTitle: "Reset Password",
+    isAuthenticated: false,
     errorMessage: req.errorMessage,
   });
 };
