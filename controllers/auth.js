@@ -227,6 +227,14 @@ exports.getNewPassword = async (req, res, next) => {
       resetToken: token,
       resetTokenExpiration: { $gt: Date.now() },
     });
+    if (!user) {
+      return res.status(400).render("auth/reset", {
+        path: "/reset",
+        pageTitle: "Reset Password",
+        isAuthenticated: false,
+        errorMessage: "Invalid or expired token.",
+      });
+    }
     res.render("auth/new-password", {
       path: "/new-password",
       pageTitle: "New Password",
@@ -243,33 +251,31 @@ exports.getNewPassword = async (req, res, next) => {
 exports.postNewPassword = async (req, res, next) => {
   const newPassword = req.body.password;
   const userId = req.body.userId;
-  const token = token;
+  const token = req.body.token;
   try {
-    const restUser = await User.findOne({resetToken: token, resetTokenExpiration: { $gt: Date.now() }, _id: userId})
-      if (!restUser) {
-        return res.status(400).render("auth/new-password", {
-          path: "/new-password",
-          pageTitle: "New Password",
-          isAuthenticated: false,
-          errorMessage: "Invalid or expired token.",
-        });
-      }
+    const restUser = await User.findOne({
+      resetToken: token,
+      resetTokenExpiration: { $gt: Date.now() },
+      _id: userId,
+    });
+    if (!restUser) {
+      return res.status(400).render("auth/new-password", {
+        path: "/new-password",
+        pageTitle: "New Password",
+        isAuthenticated: false,
+        errorMessage: "Invalid or expired token.",
+        userId: userId,
+        token: token,
+      });
+    }
 
-      restUser.password = await bcrypt.hash(newPassword, 12);
-      restUser.resetToken = undefined;
-      restUser.resetTokenExpiration = undefined;
+    restUser.password = await bcrypt.hash(newPassword, 12);
+    restUser.resetToken = undefined;
+    restUser.resetTokenExpiration = undefined;
 
-      await restUser.save();
+    await restUser.save();
 
-      res.redirect('/login');
-
-      restUser.password = await bcrypt.hash(newPassword, 12);
-      restUser.resetToken = undefined;
-      restUser.resetTokenExpiration = undefined;
-
-      await restUser.save();
-
-    res.redirect('/login');
+    res.redirect("/login");
   } catch (err) {
     console.log(err);
   }
