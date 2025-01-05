@@ -67,21 +67,45 @@ exports.getCart = async (req, res, next) => {
   }
 };
 
-// exports.getCart = (req, res, next) => {
-//   req.user
-//     .populate('cart.items.productId')
-//     .execPopulate()
-//     .then(user => {
-//       const products = user.cart.items;
-//       res.render('shop/cart', {
-//         path: '/cart',
-//         pageTitle: 'Your Cart',
-//         products: products,
-//         isAuthenticated: req.session.isLoggedIn
-//       });
-//     })
-//     .catch(err => console.log(err));
-// };
+exports.getOrders = (req, res, next) => {
+  Order.find({ "user.userId": req.user._id })
+    .then((orders) => {
+      res.render("shop/orders", {
+        path: "/orders",
+        pageTitle: "Your Orders",
+        orders: orders,
+        isAuthenticated: req.session.isLoggedIn,
+      });
+    })
+    .catch((err) => console.log(err));
+};
+
+exports.getCheckout = async(req, res, next) => {
+  try {
+    const user = await req.user.populate("cart.items.productId");
+    const products = user.cart.items;
+    let total = 0;
+    products.forEach(p => {
+      total += p.productId.price;
+    });
+    res.render("shop/checkout", {
+      path: "/checkout",
+      pageTitle: "Checkout",
+      products: products,
+      totalSum : total,
+      isAuthenticated: req.session.isLoggedIn,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render("shop/cart", {
+      path: "/cart",
+      pageTitle: "Your Cart",
+      products: [],
+      isAuthenticated: req.session.isLoggedIn,
+      errorMessage: "Failed to load cart items.",
+    });
+  }
+}
 
 exports.postCart = (req, res, next) => {
   const prodId = req.body.productId;
@@ -127,19 +151,6 @@ exports.postOrder = (req, res, next) => {
     })
     .then(() => {
       res.redirect("/orders");
-    })
-    .catch((err) => console.log(err));
-};
-
-exports.getOrders = (req, res, next) => {
-  Order.find({ "user.userId": req.user._id })
-    .then((orders) => {
-      res.render("shop/orders", {
-        path: "/orders",
-        pageTitle: "Your Orders",
-        orders: orders,
-        isAuthenticated: req.session.isLoggedIn,
-      });
     })
     .catch((err) => console.log(err));
 };
