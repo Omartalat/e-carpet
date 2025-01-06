@@ -1,12 +1,15 @@
 const crypto = require("crypto");
 
+const { validationResult } = require("express-validator");
+
 const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 // Import the Nodemailer library
 const nodemailer = require("nodemailer");
-const { buffer } = require("stream/consumers");
-const { constrainedMemory } = require("process");
+const path = require("path");
+// const { buffer } = require("stream/consumers");
+// const { constrainedMemory } = require("process");
 
 // Create a transporter object
 const transporter = nodemailer.createTransport({
@@ -20,42 +23,62 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.getLogin = (req, res, next) => {
-  res.render("auth/login", {
-    path: "/login",
-    pageTitle: "Login",
+  res.render('auth/login', {
+    path: '/login',
+    pageTitle: 'Login',
+    errorMessage: req.message,
+    oldInput: {
+      email: '',
+      password: ''
+    },
     isAuthenticated: false,
-    errorMessage: req.errorMessage,
+    validationErrors: []
   });
 };
 
 exports.getSignup = (req, res, next) => {
-  res.render("auth/signup", {
-    path: "/signup",
-    pageTitle: "Signup",
+  res.render('auth/signup', {
+    path: '/signup',
+    pageTitle: 'Signup',
+    errorMessage: req.message,
+    oldInput: {
+      email: '',
+      password: '',
+      confirmPassword: ''
+    },
     isAuthenticated: false,
-    errorMessage: req.errorMessage,
+    validationErrors: []
   });
-};
+}
 
 exports.postLogin = async (req, res, next) => {
-  try {
-    const { email, password } = req.body;
+  const email = req.body.email;
+  const password = req.body.password;
 
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render('auth/login', {
+      path: '/login',
+      pageTitle: 'Login',
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password
+      },
+      isAuthenticated: false,
+      validationErrors: errors.array()
+    });
+  }
+
+  try {
     // Find user by email
     const user = await User.findOne({ email });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).render("auth/login", {
-        path: "/login",
-        pageTitle: "Login",
-        isAuthenticated: false,
-        errorMessage: "Invalid email or password.",
-      });
-    }
 
     // Set session data
     req.session.isLoggedIn = true;
     req.session.user = user;
 
+    // Save session and redirect
     req.session.save((err) => {
       if (err) {
         console.error("Session save error:", err);
@@ -78,6 +101,7 @@ exports.postLogin = async (req, res, next) => {
     });
   }
 };
+
 // User.findById("6762f7327ec56ecbf6e2ef09")
 //   .then((user) => {
 //     req.session.isLoggedIn = true;
@@ -91,28 +115,27 @@ exports.postLogin = async (req, res, next) => {
 //};
 
 exports.postSignup = async (req, res, next) => {
-  const { email, password, confirmPassword } = req.body;
+  const email = req.body.email;
+  const password = req.body.password;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors.array());
+    return res.status(422).render('auth/signup', {
+      path: '/signup',
+      pageTitle: 'Signup',
+      errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password,
+        confirmPassword: req.body.confirmPassword
+      },
+      isAuthenticated: false,
+      validationErrors: errors.array()
+    });
+  }
   // Validate that passwords match
   try {
-    // Check if the user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).render("auth/signup", {
-        path: "/signup",
-        pageTitle: "Signup",
-        isAuthenticated: false,
-        errorMessage: "Email already in use!",
-      });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).render("auth/signup", {
-        path: "/signup",
-        pageTitle: "Signup",
-        isAuthenticated: false,
-        errorMessage: "Passwords do not match!",
-      });
-    }
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 12);
 
