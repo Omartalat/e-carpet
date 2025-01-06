@@ -14,7 +14,7 @@ const registerValidators = [
         throw new Error("Email already in use!");
       }
       return true;
-    }),
+    }).normalizeEmail(),
   body("password")
     .notEmpty()
     .withMessage("You must type a password")
@@ -25,9 +25,10 @@ const registerValidators = [
     .matches(/\d/)
     .withMessage("Password must contain at least one digit")
     .matches(/[@$!%*?&]/)
-    .withMessage("Password must contain at least one special character"),
+    .withMessage("Password must contain at least one special character")
+    .trim(),
 
-  body("confirmPassword").custom((value, { req }) => {
+  body("confirmPassword").trim().custom((value, { req }) => {
     if (!value) {
       throw new Error("Confirm password field is required");
     }
