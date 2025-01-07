@@ -1,8 +1,9 @@
 require("dotenv").config();
 const Product = require("../models/product");
 const Order = require("../models/order");
-const Stripe = require("stripe");
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+ITEMS_PER_PAGE = 1;
 
 exports.getProducts = (req, res, next) => {
   const page = +req.query.page || 1;
@@ -21,6 +22,7 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: "Products",
         path: "/products",
+        isAuthenticated: req.session.isLoggedIn,
         currentPage: page,
         hasNextPage: ITEMS_PER_PAGE * page < totalItems,
         hasPreviousPage: page > 1,
@@ -67,6 +69,7 @@ exports.getIndex = (req, res, next) => {
         prods: products,
         pageTitle: "Shop",
         path: "/",
+        isAuthenticated: req.session.isLoggedIn,
         currentPage: page,
         hasNextPage: ITEMS_PER_PAGE * page < totalItems,
         hasPreviousPage: page > 1,
@@ -117,7 +120,7 @@ exports.getOrders = (req, res, next) => {
     .catch((err) => console.log(err));
 };
 
-exports.getCheckout = async (req, res, next) => {
+exports.getCheckout = (req, res, next) => {
   let products;
   let total = 0;
   req.user
@@ -131,38 +134,36 @@ exports.getCheckout = async (req, res, next) => {
 
       return stripe.checkout.sessions.create({
         payment_method_types: ["card"],
+        mode: "payment",
         line_items: products.map((p) => {
           return {
+            quantity: p.quantity,
             price_data: {
-              currency: "eur",
-              unit_amount: parseInt(Math.ceil(p.productId.price * 100)),
+              currency: "usd",
+              unit_amount: p.productId.price * 100,
               product_data: {
                 name: p.productId.title,
                 description: p.productId.description,
               },
             },
-            quantity: p.quantity,
           };
         }),
-        mode: "payment",
-
+        customer_email: req.user.email,
         success_url:
-          req.protocol + "://" + req.get("host") + "/checkout/success", // => http://localhost:3000,
-
+          req.protocol + "://" + req.get("host") + "/checkout/success",
         cancel_url: req.protocol + "://" + req.get("host") + "/checkout/cancel",
       });
     })
     .then((session) => {
       res.render("shop/checkout", {
-        pageTitle: "Checkout",
         path: "/checkout",
+        pageTitle: "Checkout",
         products: products,
-        totalSum: total.toFixed(2),
-        isAuthenticated: req.session.isLoggedIn,
+        totalSum: total,
         sessionId: session.id,
+        isAuthenticated: req.session.isLoggedIn
       });
     })
-
     .catch((err) => {
       const error = new Error(err);
       error.httpStatusCode = 500;
