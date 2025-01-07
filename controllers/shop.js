@@ -3,7 +3,7 @@ const Product = require("../models/product");
 const Order = require("../models/order");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
-ITEMS_PER_PAGE = 1;
+ITEMS_PER_PAGE = 2;
 
 exports.getProducts = (req, res, next) => {
   const page = +req.query.page || 1;

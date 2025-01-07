@@ -82,6 +82,7 @@ exports.getEditProduct = (req, res, next) => {
         product: product,
         hasError: false,
         errorMessage: null,
+        isAuthenticated: req.session.isLoggedIn,
         validationErrors: []
       });
     })
@@ -113,6 +114,7 @@ exports.postEditProduct = (req, res, next) => {
         description: updatedDesc,
         _id: prodId
       },
+      isAuthenticated: req.session.isLoggedIn,
       errorMessage: errors.array()[0].msg,
       validationErrors: errors.array()
     });
