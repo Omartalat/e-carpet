@@ -75,11 +75,13 @@ project-root/
 3. **Set up environment variables:**
    - Create a `.env` file in the project root with the following variables:
      ```env
-     PORT=3000
-     MONGO_URI=your-mongodb-connection-string
-     STRIPE_SECRET_KEY=your-stripe-secret-key
-     STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
-     SESSION_SECRET=your-session-secret
+      PORT=3000
+      MONGO_URI=your-mongodb-connection-string
+      STRIPE_SECRET_KEY=your-stripe-secret-key
+      STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+      SESSION_SECRET=your-session-secret
+      EMAIL_API_PASS=your-email-api-password
+      EMAIL_API_USER=your-email-api-user
      ```
 
 4. **Start the development server:**
