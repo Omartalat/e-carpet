@@ -134,6 +134,6 @@ For any inquiries or feedback, feel free to reach out:
 - **Author:** Omar Talat Mohamed
 - **Email:** omartalat@example.com
 - **LinkedIn:** [LinkedIn Profile](https://linkedin.com/in/dr-omartalat)
-- **GitHub Account:**![GitHub Profile](https://github.com/Omartalat/)
+- **GitHub Account:**[GitHub Profile](https://github.com/Omartalat/)
 - **Repository:** [GitHub - Omartalat/e-carpet](https://github.com/Omartalat/e-carpet)
 
